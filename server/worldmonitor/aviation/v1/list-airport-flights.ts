@@ -7,7 +7,6 @@ import type {
     Carrier,
     AirportRef,
 } from '../../../../src/generated/server/worldmonitor/aviation/v1/service_server';
-import { MONITORED_AIRPORTS } from '../../../../src/config/airports';
 import { cachedFetchJson } from '../../../_shared/redis';
 import { CHROME_UA } from '../../../_shared/constants';
 import { AVIATIONSTACK_URL } from './_shared';
