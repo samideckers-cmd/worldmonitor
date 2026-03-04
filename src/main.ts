@@ -167,6 +167,11 @@ Sentry.init({
     /Qt\(\) is not a function/,
     /out of memory/,
     /Could not connect to the server/,
+    /Invalid LngLat object/,
+    /Response served by service worker is opaque/,
+    /fooviewOverrideExecCmd/,
+    /contentDocument\.body/,
+    /WebGL2RenderingContext\.shaderSource must be an instance of WebGLShader/,
   ],
   beforeSend(event) {
     const msg = event.exception?.values?.[0]?.value ?? '';
@@ -189,6 +194,11 @@ Sentry.init({
     }
     // Suppress deck.gl/maplibre null-access crashes with no usable stack trace (requestAnimationFrame wrapping)
     if (/null is not an object \(evaluating '\w{1,3}\.(id|type|style)'\)/.test(msg) && frames.length === 0) return null;
+    // Suppress single-letter-variable TypeErrors in minified bundles (Three.js/deck.gl internals)
+    if (/^TypeError: \w{1,2} is (?:undefined|null)$/.test(msg) && frames.length > 0) {
+      const nonSentryFrames = frames.filter(f => f.filename && f.filename !== '<anonymous>' && !/\/sentry-[A-Za-z0-9_-]+\.js/.test(f.filename));
+      if (nonSentryFrames.length > 0 && nonSentryFrames.every(f => /\/(?:main|map|maplibre|deck-stack|panels)-[A-Za-z0-9_-]+\.js/.test(f.filename ?? ''))) return null;
+    }
     // Suppress TypeErrors from anonymous/injected scripts (no real source files)
     if (/^TypeError:/.test(msg) && frames.length > 0 && frames.every(f => !f.filename || f.filename === '<anonymous>' || /^blob:/.test(f.filename))) return null;
     // Suppress errors originating entirely from blob: URLs (browser extensions)
