@@ -1241,11 +1241,9 @@ export class GlobeMap {
             const code = feat.properties?.['ISO3166-1-Alpha-2'] as string | undefined;
             if (!code || !isoCodes.includes(code)) continue;
             const geom = feat.geometry;
+            if (!geom) continue;
             const rings = geom.type === 'Polygon' ? [geom.coordinates] : geom.type === 'MultiPolygon' ? geom.coordinates : [];
             for (const ring of rings) {
-              // Reverse winding on all rings: globe.gl's ConicPolygonGeometry + earcut
-              // renders CCW exterior rings as complement on the sphere.
-              // Reversing to CW makes earcut fill the polygon interior correctly.
               const reversed = ring.map((r: number[][]) => [...r].reverse());
               polys.push({
                 coords: reversed,
@@ -1271,6 +1269,7 @@ export class GlobeMap {
         const entry = code ? this.ciiScoresMap.get(code) : undefined;
         if (!entry || !code) continue;
         const geom = feat.geometry;
+        if (!geom) continue;
         const rings = geom.type === 'Polygon' ? [geom.coordinates] : geom.type === 'MultiPolygon' ? geom.coordinates : [];
         const name = (feat.properties?.name as string) ?? code;
         for (const ring of rings) {
