@@ -9,6 +9,10 @@ const MAX_PAYLOAD_BYTES = 5 * 1024 * 1024; // 5MB per key
 
 export { CHROME_UA };
 
+export function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 export function loadEnvFile(metaUrl) {
   const __dirname = metaUrl ? dirname(fileURLToPath(metaUrl)) : process.cwd();
   const candidates = [
@@ -182,6 +186,33 @@ export async function verifySeedKey(key) {
   const { url, token } = getRedisCredentials();
   const data = await redisGet(url, token, key);
   return data;
+}
+
+export function parseYahooChart(data, symbol) {
+  const result = data?.chart?.result?.[0];
+  const meta = result?.meta;
+  if (!meta) return null;
+
+  const price = meta.regularMarketPrice;
+  const prevClose = meta.chartPreviousClose || meta.previousClose || price;
+  const change = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
+  const closes = result.indicators?.quote?.[0]?.close;
+  const sparkline = Array.isArray(closes) ? closes.filter((v) => v != null) : [];
+
+  return { symbol, name: symbol, display: symbol, price, change: +change.toFixed(2), sparkline };
+}
+
+export async function writeExtraKey(key, data, ttl) {
+  const { url, token } = getRedisCredentials();
+  const payload = JSON.stringify(data);
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(['SET', key, payload, 'EX', ttl]),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!resp.ok) console.warn(`  Extra key ${key}: write failed (HTTP ${resp.status})`);
+  else console.log(`  Extra key ${key}: written`);
 }
 
 export async function runSeed(domain, resource, canonicalKey, fetchFn, opts = {}) {

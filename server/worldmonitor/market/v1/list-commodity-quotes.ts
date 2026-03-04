@@ -28,14 +28,21 @@ export async function listCommodityQuotes(
   const symbols = parseStringArray(req.symbols);
   if (!symbols.length) return { quotes: [] };
 
-  // Layer 0: bootstrap/seed data (written by Railway ais-relay)
+  // Layer 0: seed-first — read from Railway seed with freshness check
+  const SEED_FRESHNESS_MS = 15 * 60 * 1000;
+  const now = Date.now();
   try {
+    const meta = await getCachedJson('seed-meta:market:commodities', true) as { fetchedAt?: number } | null;
+    const seedAge = meta?.fetchedAt ? now - meta.fetchedAt : Infinity;
     const bootstrap = await getCachedJson('market:commodities-bootstrap:v1', true) as ListCommodityQuotesResponse | null;
     if (bootstrap?.quotes?.length) {
       const symbolSet = new Set(symbols);
       const filtered = bootstrap.quotes.filter((q: CommodityQuote) => symbolSet.has(q.symbol));
       if (filtered.length > 0) {
-        return { quotes: filtered };
+        const isFresh = seedAge < SEED_FRESHNESS_MS;
+        if (isFresh || !process.env.SEED_FALLBACK_COMMODITY) {
+          return { quotes: filtered };
+        }
       }
     }
   } catch {}
