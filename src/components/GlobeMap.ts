@@ -474,6 +474,12 @@ export class GlobeMap {
         'position:absolute;top:0;left:0;width:100% !important;height:100% !important;';
     }
 
+    // Globe attribution (texture + OpenStreetMap data)
+    const attribution = document.createElement('div');
+    attribution.className = 'map-attribution';
+    attribution.innerHTML = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © <a href="https://www.naturalearthdata.com" target="_blank" rel="noopener">Natural Earth</a>';
+    this.container.appendChild(attribution);
+
     // Upgrade material to MeshStandardMaterial + add scene enhancements
     setTimeout(async () => {
       try {
@@ -1201,9 +1207,11 @@ export class GlobeMap {
           this.layers[layer] = checked;
           this.flushLayerChannels(layer);
           this.onLayerChangeCb?.(layer, checked, 'user');
+          this.enforceLayerLimit();
         }
       });
     });
+    this.enforceLayerLimit();
 
     const collapseBtn = el.querySelector('.toggle-collapse');
     const list = el.querySelector('.toggle-list') as HTMLElement | null;
@@ -1607,7 +1615,38 @@ export class GlobeMap {
   public enableLayer(layer: keyof MapLayers): void {
     if (this.layers[layer]) return;
     (this.layers as any)[layer] = true;
+    const toggle = this.layerTogglesEl?.querySelector(`.layer-toggle[data-layer="${layer}"] input`) as HTMLInputElement | null;
+    if (toggle) toggle.checked = true;
     this.flushLayerChannels(layer);
+    this.enforceLayerLimit();
+  }
+
+  private enforceLayerLimit(): void {
+    if (!this.layerTogglesEl) return;
+    const MAX_GLOBE_LAYERS = 6;
+    const allToggles = Array.from(this.layerTogglesEl.querySelectorAll<HTMLInputElement>('.layer-toggle input'));
+    const checked = allToggles.filter(i => i.checked);
+    if (checked.length > MAX_GLOBE_LAYERS) {
+      const excess = checked.slice(MAX_GLOBE_LAYERS);
+      for (const inp of excess) {
+        inp.checked = false;
+        const layer = inp.closest('.layer-toggle')?.getAttribute('data-layer') as keyof MapLayers | null;
+        if (layer) {
+          this.layers[layer] = false;
+          this.flushLayerChannels(layer);
+        }
+      }
+    }
+    const activeCount = allToggles.filter(i => i.checked).length;
+    allToggles.forEach(i => {
+      if (!i.checked) {
+        i.disabled = activeCount >= MAX_GLOBE_LAYERS;
+        i.closest('.layer-toggle')?.classList.toggle('limit-reached', activeCount >= MAX_GLOBE_LAYERS);
+      } else {
+        i.disabled = false;
+        i.closest('.layer-toggle')?.classList.remove('limit-reached');
+      }
+    });
   }
 
   // ─── Camera / navigation ──────────────────────────────────────────────────
