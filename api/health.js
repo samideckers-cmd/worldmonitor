@@ -69,9 +69,9 @@ const SEED_META = {
   // RPC-populated keys — auto-tracked by cachedFetchJson seed-meta writes
   serviceStatuses:  { key: 'seed-meta:infra:service-statuses',    maxStaleMin: 120 },
   macroSignals:     { key: 'seed-meta:economic:macro-signals',    maxStaleMin: 60 },
-  bisPolicy:        { key: 'seed-meta:economic:bis:policy',       maxStaleMin: 1440 },
-  bisExchange:      { key: 'seed-meta:economic:bis:eer',          maxStaleMin: 1440 },
-  bisCredit:        { key: 'seed-meta:economic:bis:credit',       maxStaleMin: 1440 },
+  bisPolicy:        { key: 'seed-meta:economic:bis:policy',       maxStaleMin: 2880 },
+  bisExchange:      { key: 'seed-meta:economic:bis:eer',          maxStaleMin: 2880 },
+  bisCredit:        { key: 'seed-meta:economic:bis:credit',       maxStaleMin: 2880 },
   shippingRates:    { key: 'seed-meta:supply_chain:shipping',     maxStaleMin: 240 },
   chokepoints:      { key: 'seed-meta:supply_chain:chokepoints',  maxStaleMin: 60 },
   minerals:         { key: 'seed-meta:supply_chain:minerals',     maxStaleMin: 2880 },
