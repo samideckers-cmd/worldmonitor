@@ -12,10 +12,11 @@ initI18n().then(() => {
   );
 
   // Explicit Turnstile rendering after React mount.
-  // Polls until the async Turnstile script is ready.
+  // Polls until the async Turnstile script is ready (max ~10s).
+  let attempts = 0;
   const initWidgets = () => {
     if (window.turnstile) { renderTurnstileWidgets(); return; }
-    setTimeout(initWidgets, 300);
+    if (++attempts < 30) setTimeout(initWidgets, 300);
   };
   setTimeout(initWidgets, 100);
 });
