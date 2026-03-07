@@ -27,10 +27,17 @@ function useTurnstile(containerRef: React.RefObject<HTMLDivElement | null>) {
       widgetIdRef.current = window.turnstile.render(el, { sitekey: TURNSTILE_SITE_KEY, theme: 'dark', size: 'invisible' });
     };
     tryRender();
+    let iv: ReturnType<typeof setInterval> | undefined;
     if (!widgetIdRef.current) {
-      const iv = setInterval(() => { tryRender(); if (widgetIdRef.current) clearInterval(iv); }, 500);
-      return () => clearInterval(iv);
+      iv = setInterval(() => { tryRender(); if (widgetIdRef.current && iv) clearInterval(iv); }, 500);
     }
+    return () => {
+      if (iv) clearInterval(iv);
+      if (widgetIdRef.current) {
+        window.turnstile?.remove(widgetIdRef.current);
+        widgetIdRef.current = undefined;
+      }
+    };
   }, [containerRef]);
   return widgetIdRef;
 }

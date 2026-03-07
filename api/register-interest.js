@@ -38,8 +38,13 @@ async function verifyTurnstile(token, ip) {
   }
 }
 
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 async function sendConfirmationEmail(email, referralCode, position) {
-  const referralLink = `https://worldmonitor.app/pro?ref=${referralCode}`;
+  const safeCode = encodeURIComponent(referralCode);
+  const referralLink = `https://worldmonitor.app/pro?ref=${safeCode}`;
   const shareText = encodeURIComponent('I just joined the World Monitor Pro waitlist \u2014 real-time global intelligence powered by AI. Join me:');
   const shareUrl = encodeURIComponent(referralLink);
   const twitterShare = `https://x.com/intent/tweet?text=${shareText}&url=${shareUrl}`;
@@ -132,7 +137,7 @@ async function sendConfirmationEmail(email, referralCode, position) {
               <div style="text-align: center; margin-bottom: 24px;">
                 <div style="display: inline-block; background: #111; border: 1px solid #4ade80; padding: 12px 28px;">
                   <div style="font-size: 11px; color: #4ade80; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px;">Your position</div>
-                  <div style="font-size: 32px; font-weight: 800; color: #fff;">#${position || '?'}</div>
+                  <div style="font-size: 32px; font-weight: 800; color: #fff;">#${escapeHtml(position || '?')}</div>
                 </div>
               </div>
               <div style="background: #111; border: 1px solid #1a1a1a; border-left: 3px solid #4ade80; padding: 20px 24px; margin-bottom: 24px;">
