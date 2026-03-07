@@ -640,6 +640,7 @@ export class Panel {
     if (this._locked) return;
     this.setErrorState(false);
     this.clearRetryCountdown();
+    this.cancelPendingContent();
     replaceChildren(this.content,
       h('div', { className: 'panel-loading' },
         h('div', { className: 'panel-loading-radar' },
@@ -654,6 +655,7 @@ export class Panel {
   public showError(message?: string, onRetry?: () => void, autoRetrySeconds?: number): void {
     if (this._locked) return;
     this.clearRetryCountdown();
+    this.cancelPendingContent();
     this.setErrorState(true);
     if (onRetry !== undefined) this.retryCallback = onRetry;
 
@@ -838,6 +840,14 @@ export class Panel {
         this.setContentImmediate(this.pendingContentHtml);
       }
     }, this.contentDebounceMs);
+  }
+
+  private cancelPendingContent(): void {
+    if (this.contentDebounceTimer) {
+      clearTimeout(this.contentDebounceTimer);
+      this.contentDebounceTimer = null;
+    }
+    this.pendingContentHtml = null;
   }
 
   private setContentImmediate(html: string): void {
