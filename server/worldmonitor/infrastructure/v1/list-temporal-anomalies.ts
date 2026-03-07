@@ -55,12 +55,8 @@ function redisCmd(cmd: string[]): { url: string; token: string; body: string } |
   return { url, token, body: JSON.stringify(cmd) };
 }
 
-function makeLockOwner(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-async function tryAcquireLock(owner: string): Promise<boolean> {
-  const r = redisCmd(['SET', BASELINE_LOCK_KEY, owner, 'NX', 'EX', String(BASELINE_LOCK_TTL)]);
+async function tryAcquireLock(): Promise<boolean> {
+  const r = redisCmd(['SET', BASELINE_LOCK_KEY, '1', 'NX', 'EX', String(BASELINE_LOCK_TTL)]);
   if (!r) return false;
   try {
     const resp = await fetch(r.url, {
@@ -77,30 +73,6 @@ async function tryAcquireLock(owner: string): Promise<boolean> {
   }
 }
 
-async function releaseLock(owner: string): Promise<void> {
-  const r = redisCmd(['GET', BASELINE_LOCK_KEY]);
-  if (!r) return;
-  try {
-    const resp = await fetch(r.url, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${r.token}`, 'Content-Type': 'application/json' },
-      body: r.body,
-      signal: AbortSignal.timeout(2_000),
-    });
-    if (!resp.ok) return;
-    const data = (await resp.json()) as { result?: string | null };
-    if (data.result !== owner) return;
-    const del = redisCmd(['DEL', BASELINE_LOCK_KEY]);
-    if (!del) return;
-    await fetch(del.url, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${del.token}`, 'Content-Type': 'application/json' },
-      body: del.body,
-      signal: AbortSignal.timeout(2_000),
-    });
-  } catch { /* best effort */ }
-}
-
 export async function listTemporalAnomalies(
   _ctx: ServerContext,
   _req: ListTemporalAnomaliesRequest,
@@ -114,14 +86,13 @@ export async function listTemporalAnomalies(
       }
     }
 
-    const owner = makeLockOwner();
-    const lockAcquired = await tryAcquireLock(owner);
+    const lockAcquired = await tryAcquireLock();
     if (!lockAcquired) {
       if (cached) return cached;
       return { anomalies: [], trackedTypes: [], computedAt: '' };
     }
 
-    try {
+    {
       const now = new Date();
       const weekday = now.getUTCDay();
       const month = now.getUTCMonth() + 1;
@@ -212,8 +183,6 @@ export async function listTemporalAnomalies(
 
       await setCachedJson(TEMPORAL_ANOMALIES_KEY, snapshot, TEMPORAL_ANOMALIES_TTL);
       return snapshot;
-    } finally {
-      await releaseLock(owner);
     }
   } catch {
     return { anomalies: [], trackedTypes: [], computedAt: '' };
