@@ -288,7 +288,8 @@ async function fetchSubmarineCables() {
 }
 
 function validate(data) {
-  return data?.cables?.length >= 75;
+  const allCount = CABLE_REGIONS.reduce((s, r) => s + r.ids.length, 0);
+  return data?.cables?.length >= Math.floor(allCount * 0.9);
 }
 
 runSeed('infrastructure', 'submarine-cables', CANONICAL_KEY, fetchSubmarineCables, {
