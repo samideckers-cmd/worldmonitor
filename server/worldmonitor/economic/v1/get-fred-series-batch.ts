@@ -93,21 +93,20 @@ export async function getFredSeriesBatch(
       }
     }
 
-    const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-    for (let i = 0; i < toFetch.length; i++) {
-      const id = toFetch[i]!;
-      const cacheResult = await cachedFetchJson<{ series?: FredSeries }>(
-        `${REDIS_CACHE_KEY}:${id}:${limit}`,
-        REDIS_CACHE_TTL,
-        async () => {
-          const series = await fetchSingleFred(id, limit);
-          return series ? { series } : null;
-        },
-      );
-      if (cacheResult?.series) results[id] = cacheResult.series;
-      if (i < toFetch.length - 1) await delay(100);
-    }
+    // Fetch all uncached series in parallel (max 10, each hits separate FRED endpoint)
+    await Promise.allSettled(
+      toFetch.map(async (id) => {
+        const cacheResult = await cachedFetchJson<{ series?: FredSeries }>(
+          `${REDIS_CACHE_KEY}:${id}:${limit}`,
+          REDIS_CACHE_TTL,
+          async () => {
+            const series = await fetchSingleFred(id, limit);
+            return series ? { series } : null;
+          },
+        );
+        if (cacheResult?.series) results[id] = cacheResult.series;
+      }),
+    );
 
     return {
       results,

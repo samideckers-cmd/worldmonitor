@@ -296,7 +296,7 @@ export async function fetchHapiSummary(): Promise<Map<string, HapiConflictSummar
     try {
       return await client.getHumanitarianSummaryBatch(
         { countryCodes: [...HAPI_COUNTRY_CODES] },
-        { signal: AbortSignal.timeout(30_000) },
+        { signal: AbortSignal.timeout(60_000) },
       );
     } catch (err: unknown) {
       // 404 deploy-skew fallback: batch endpoint not yet deployed, use per-item calls

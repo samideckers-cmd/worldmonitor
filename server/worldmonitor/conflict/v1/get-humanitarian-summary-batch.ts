@@ -119,20 +119,27 @@ export async function getHumanitarianSummaryBatch(
       }
     }
 
-    const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-    for (let i = 0; i < toFetch.length; i++) {
-      const cc = toFetch[i]!;
-      const cacheResult = await cachedFetchJson<{ summary?: HumanitarianCountrySummary }>(
-        `${REDIS_CACHE_KEY}:${cc}`,
-        REDIS_CACHE_TTL,
-        async () => {
-          const summary = await fetchSingleHapiSummary(cc);
-          return summary ? { summary } : null;
-        },
+    // Fetch uncached countries in concurrent groups of 5 for partial-success resilience
+    const CONCURRENCY = 5;
+    for (let i = 0; i < toFetch.length; i += CONCURRENCY) {
+      const batch = toFetch.slice(i, i + CONCURRENCY);
+      const settled = await Promise.allSettled(
+        batch.map(async (cc) => {
+          const cacheResult = await cachedFetchJson<{ summary?: HumanitarianCountrySummary }>(
+            `${REDIS_CACHE_KEY}:${cc}`,
+            REDIS_CACHE_TTL,
+            async () => {
+              const summary = await fetchSingleHapiSummary(cc);
+              return summary ? { summary } : null;
+            },
+          );
+          if (cacheResult?.summary) results[cc] = cacheResult.summary;
+        }),
       );
-      if (cacheResult?.summary) results[cc] = cacheResult.summary;
-      if (i < toFetch.length - 1) await delay(100);
+      // Log failures for visibility but don't abort
+      for (const r of settled) {
+        if (r.status === 'rejected') console.warn('[HAPI batch] fetch failed:', r.reason);
+      }
     }
 
     return {
