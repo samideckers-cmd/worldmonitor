@@ -569,10 +569,7 @@ export function mergeNotamWithExistingAlert(
     SEV_ORDER.indexOf(notamFloor),
   )] ?? 'moderate';
 
-  let delayType: string;
-  if (effectiveSev === 'severe' && cancelRate >= 80) delayType = 'closure';
-  else if (effectiveSev === 'severe' || effectiveSev === 'major') delayType = 'ground_stop';
-  else delayType = 'ground_delay';
+  const delayType = 'closure';
 
   const cancelText = `${Math.round(cancelRate)}% cxl`;
   const reason = `NOTAM: ${notamReason.slice(0, 120)} — ${cancelText}`;
