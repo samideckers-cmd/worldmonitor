@@ -14,7 +14,7 @@ const TURNSTILE_SITE_KEY = '0x4AAAAAACnaYgHIyxclu8Tj';
 const PRO_URL = 'https://worldmonitor.app/pro';
 
 declare global {
-  interface Window { turnstile?: { getResponse: (id?: string) => string | undefined; reset: (id?: string) => void; }; }
+  interface Window { turnstile?: { getResponse: (widgetOrId?: string | HTMLElement) => string | undefined; reset: (widgetOrId?: string | HTMLElement) => void; }; }
 }
 
 function getRefCode(): string | undefined {
@@ -97,8 +97,12 @@ async function submitWaitlist(email: string, formEl: HTMLFormElement) {
 
   const honeypot = (formEl.querySelector('input[name="website"]') as HTMLInputElement)?.value || '';
   const turnstileWidget = formEl.querySelector('.cf-turnstile') as HTMLElement | null;
-  const widgetId = turnstileWidget?.dataset.widgetId;
-  const turnstileToken = window.turnstile?.getResponse(widgetId) || '';
+  let turnstileToken = '';
+  try {
+    if (turnstileWidget && window.turnstile) {
+      turnstileToken = window.turnstile.getResponse(turnstileWidget) || '';
+    }
+  } catch { /* widget not rendered yet — API validates server-side */ }
   const ref = getRefCode();
 
   try {
@@ -113,7 +117,7 @@ async function submitWaitlist(email: string, formEl: HTMLFormElement) {
   } catch (err: any) {
     btn.textContent = err.message === 'Too many requests' ? t('form.tooManyRequests') : t('form.failedTryAgain');
     btn.disabled = false;
-    window.turnstile?.reset(widgetId);
+    try { if (turnstileWidget && window.turnstile) window.turnstile.reset(turnstileWidget); } catch { /* noop */ }
     setTimeout(() => { btn.textContent = origText; }, 3000);
   }
 }
