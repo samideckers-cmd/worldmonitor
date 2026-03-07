@@ -12,6 +12,7 @@ import {
   Landmark, Fuel
 } from 'lucide-react';
 import { t } from './i18n';
+import dashboardFallback from './assets/worldmonitor-7-mar-2026.jpg';
 
 const API_BASE = location.hostname === 'localhost' ? 'https://api.worldmonitor.app' : '/api';
 const TURNSTILE_SITE_KEY = '0x4AAAAAACnaYgHIyxclu8Tj';
@@ -377,7 +378,7 @@ const LivePreview = () => (
         </div>
         <div className="relative aspect-[16/9] bg-black">
           <img
-            src="/docs/images/worldmonitor-7-mar-2026.jpg"
+            src={dashboardFallback}
             alt="World Monitor Dashboard"
             className="absolute inset-0 w-full h-full object-cover"
           />
