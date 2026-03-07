@@ -199,6 +199,17 @@ Sentry.init({
     /Client can't handle this message/,
     /Invalid LngLat object/,
     /autoReset/,
+    /webkitExitFullScreen/,
+    /downProgCallback/,
+    /syncDownloadState/,
+    /^ReferenceError: HTMLOUT is not defined$/,
+    /^ReferenceError: xbrowser is not defined$/,
+    /LibraryDetectorTests_detect/,
+    /contentBoxSize\[0\] is undefined/,
+    /Attempting to run\(\), but is already running/,
+    /Out of range source coordinates for DEM data/,
+    /Invalid character: '\\0'/,
+    /parentNode\.insertBefore/,
   ],
   beforeSend(event) {
     const msg = event.exception?.values?.[0]?.value ?? '';
@@ -221,7 +232,9 @@ Sentry.init({
     }
     // Suppress Three.js OrbitControls touch crashes (finger lifted during pinch-zoom)
     if (/undefined is not an object \(evaluating 't\.x'\)|Cannot read properties of undefined \(reading 'x'\)/.test(msg)) {
-      if (frames.some(f => /_handleTouchStart|Dolly|eie|jse/.test(f.function ?? ''))) return null;
+      const nonSentryFrames = frames.filter(f => f.filename && f.filename !== '<anonymous>' && !/\/sentry-[A-Za-z0-9_-]+\.js/.test(f.filename));
+      const hasSourceMapped = nonSentryFrames.some(f => /\.(ts|tsx)$/.test(f.filename ?? '') || /^src\//.test(f.filename ?? ''));
+      if (!hasSourceMapped) return null;
     }
     // Suppress deck.gl/maplibre null-access crashes with no usable stack trace (requestAnimationFrame wrapping)
     if (/null is not an object \(evaluating '\w{1,3}\.(id|type|style)'\)/.test(msg) && frames.length === 0) return null;
