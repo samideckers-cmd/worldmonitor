@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   Globe, Activity, ShieldAlert, Zap, Terminal, Database,
@@ -316,7 +317,7 @@ const TwoPathSplit = () => (
             </li>
           ))}
         </ul>
-        <a href="#enterprise-contact" className="block text-center py-2.5 rounded-sm font-mono text-xs uppercase tracking-wider font-bold border border-wm-border text-wm-muted hover:text-wm-text hover:border-wm-text transition-colors">
+        <a href="#enterprise" className="block text-center py-2.5 rounded-sm font-mono text-xs uppercase tracking-wider font-bold border border-wm-border text-wm-muted hover:text-wm-text hover:border-wm-text transition-colors">
           {t('twoPath.entCta')}
         </a>
       </div>
@@ -717,55 +718,13 @@ const EnterpriseShowcase = () => (
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto mt-16 bg-wm-card border border-wm-border p-8" id="enterprise-contact">
-        <h3 className="font-display text-xl font-bold mb-2 text-center">{t('enterpriseShowcase.contactFormTitle')}</h3>
-        <p className="text-sm text-wm-muted mb-6 text-center">{t('enterpriseShowcase.contactFormSubtitle')}</p>
-        <form className="space-y-4" onSubmit={async (e) => {
-          e.preventDefault();
-          const form = e.currentTarget;
-          const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
-          const origText = btn.textContent;
-          btn.disabled = true;
-          btn.textContent = t('enterpriseShowcase.contactSending');
-          const fd = new FormData(form);
-          const honeypot = (form.querySelector('input[name="website"]') as HTMLInputElement)?.value || '';
-          const turnstileWidget = form.querySelector('.cf-turnstile') as HTMLElement | null;
-          const turnstileToken = turnstileWidget?.dataset.token || '';
-          try {
-            const res = await fetch(`${API_BASE}/register-interest`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email: fd.get('email'),
-                name: fd.get('name'),
-                organization: fd.get('organization'),
-                message: fd.get('message'),
-                source: 'enterprise-contact',
-                website: honeypot,
-                turnstileToken,
-              }),
-            });
-            if (!res.ok) throw new Error();
-            btn.textContent = t('enterpriseShowcase.contactSent');
-            btn.className = btn.className.replace('bg-wm-green', 'bg-wm-card border border-wm-green text-wm-green');
-          } catch {
-            btn.textContent = t('enterpriseShowcase.contactFailed');
-            btn.disabled = false;
-            setTimeout(() => { btn.textContent = origText; }, 4000);
-          }
-        }}>
-          <input type="text" name="website" autoComplete="off" tabIndex={-1} aria-hidden="true" className="absolute opacity-0 h-0 w-0 pointer-events-none" />
-          <div className="grid grid-cols-2 gap-4">
-            <input type="text" name="name" placeholder={t('enterpriseShowcase.namePlaceholder')} required className="bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono" />
-            <input type="email" name="email" placeholder={t('enterpriseShowcase.emailPlaceholder')} required className="bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono" />
-          </div>
-          <input type="text" name="organization" placeholder={t('enterpriseShowcase.orgPlaceholder')} className="w-full bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono" />
-          <textarea name="message" placeholder={t('enterpriseShowcase.messagePlaceholder')} rows={3} className="w-full bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono resize-none" />
-          <div className="cf-turnstile mx-auto" data-size="invisible" />
-          <button type="submit" className="w-full bg-wm-green text-wm-bg py-3 rounded-sm font-mono text-sm uppercase tracking-wider font-bold hover:bg-green-400 transition-colors">
-            {t('enterpriseShowcase.submitContact')}
-          </button>
-        </form>
+      <div className="text-center mt-12">
+        <a
+          href="#enterprise"
+          className="inline-flex items-center gap-2 bg-wm-green text-wm-bg px-8 py-3 rounded-sm font-mono text-sm uppercase tracking-wider font-bold hover:bg-green-400 transition-colors"
+        >
+          {t('enterpriseShowcase.talkToSales')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
+        </a>
       </div>
     </div>
   </section>
@@ -889,7 +848,7 @@ const Footer = () => (
       </form>
 
       <a
-        href="#enterprise-contact"
+        href="#enterprise"
         className="inline-flex items-center gap-2 text-sm text-wm-muted hover:text-wm-text transition-colors font-mono"
       >
         {t('finalCta.talkToSales')} <ArrowRight className="w-3 h-3" aria-hidden="true" />
@@ -909,38 +868,209 @@ const Footer = () => (
   </footer>
 );
 
+/* ─── Enterprise Page (dedicated /pro/#enterprise) ─── */
+const EnterprisePage = () => (
+  <div className="min-h-screen selection:bg-wm-green/30 selection:text-wm-green">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass-panel border-b-0 border-x-0 rounded-none" aria-label="Main navigation">
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ''; }}><Logo /></a>
+        <div className="hidden md:flex items-center gap-8 text-sm font-mono text-wm-muted">
+          <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ''; }} className="hover:text-wm-text transition-colors">{t('nav.pro')}</a>
+          <a href="#features" className="hover:text-wm-text transition-colors">{t('nav.enterprise')}</a>
+          <a href="#contact" className="hover:text-wm-green transition-colors">{t('enterpriseShowcase.talkToSales')}</a>
+        </div>
+        <a href="#contact" className="bg-wm-green text-wm-bg px-4 py-2 rounded-sm font-mono text-xs uppercase tracking-wider font-bold hover:bg-green-400 transition-colors">
+          {t('enterpriseShowcase.talkToSales')}
+        </a>
+      </div>
+    </nav>
+
+    <main className="pt-24">
+      {/* Hero */}
+      <section className="py-24 px-6 text-center">
+        <div className="max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-wm-border bg-wm-card text-wm-muted text-xs font-mono mb-6">
+            {t('enterpriseShowcase.enterpriseTier')}
+          </div>
+          <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">{t('enterpriseShowcase.title')}</h1>
+          <p className="text-lg text-wm-muted max-w-2xl mx-auto mb-10">
+            {t('enterpriseShowcase.subtitle')}
+          </p>
+          <a href="#contact" className="inline-flex items-center gap-2 bg-wm-green text-wm-bg px-8 py-3 rounded-sm font-mono text-sm uppercase tracking-wider font-bold hover:bg-green-400 transition-colors">
+            {t('enterpriseShowcase.talkToSales')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          </a>
+        </div>
+      </section>
+
+      {/* Features grid */}
+      <section className="py-24 px-6" id="features">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-wm-card border border-wm-border p-6">
+              <ShieldAlert className="w-8 h-8 text-wm-muted mb-4" aria-hidden="true" />
+              <h4 className="font-bold mb-2">{t('enterpriseShowcase.security')}</h4>
+              <p className="text-sm text-wm-muted">{t('enterpriseShowcase.securityDesc')}</p>
+            </div>
+            <div className="bg-wm-card border border-wm-border p-6">
+              <Cpu className="w-8 h-8 text-wm-muted mb-4" aria-hidden="true" />
+              <h4 className="font-bold mb-2">{t('enterpriseShowcase.aiAgents')}</h4>
+              <p className="text-sm text-wm-muted">{t('enterpriseShowcase.aiAgentsDesc')}</p>
+            </div>
+            <div className="bg-wm-card border border-wm-border p-6">
+              <Layers className="w-8 h-8 text-wm-muted mb-4" aria-hidden="true" />
+              <h4 className="font-bold mb-2">{t('enterpriseShowcase.dataLayers')}</h4>
+              <p className="text-sm text-wm-muted">{t('enterpriseShowcase.dataLayersDesc')}</p>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            <div className="bg-wm-card border border-wm-border p-6">
+              <Plug className="w-8 h-8 text-wm-muted mb-4" aria-hidden="true" />
+              <h4 className="font-bold mb-2">{t('enterpriseShowcase.connectors')}</h4>
+              <p className="text-sm text-wm-muted">{t('enterpriseShowcase.connectorsDesc')}</p>
+            </div>
+            <div className="bg-wm-card border border-wm-border p-6">
+              <PanelTop className="w-8 h-8 text-wm-muted mb-4" aria-hidden="true" />
+              <h4 className="font-bold mb-2">{t('enterpriseShowcase.whiteLabel')}</h4>
+              <p className="text-sm text-wm-muted">{t('enterpriseShowcase.whiteLabelDesc')}</p>
+            </div>
+            <div className="bg-wm-card border border-wm-border p-6">
+              <BarChart3 className="w-8 h-8 text-wm-muted mb-4" aria-hidden="true" />
+              <h4 className="font-bold mb-2">{t('enterpriseShowcase.financial')}</h4>
+              <p className="text-sm text-wm-muted">{t('enterpriseShowcase.financialDesc')}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Use cases */}
+      <section className="py-24 px-6 border-t border-wm-border">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl font-display font-bold mb-12 text-center">{t('enterpriseShowcase.title')}</h2>
+          <div className="data-grid">
+            <div className="data-cell">
+              <h5 className="font-mono text-xs text-wm-muted uppercase tracking-widest mb-2">{t('enterpriseShowcase.commodity')}</h5>
+              <p className="text-sm">{t('enterpriseShowcase.commodityDesc')}</p>
+            </div>
+            <div className="data-cell">
+              <h5 className="font-mono text-xs text-wm-muted uppercase tracking-widest mb-2">{t('enterpriseShowcase.government')}</h5>
+              <p className="text-sm">{t('enterpriseShowcase.governmentDesc')}</p>
+            </div>
+            <div className="data-cell">
+              <h5 className="font-mono text-xs text-wm-muted uppercase tracking-widest mb-2">{t('enterpriseShowcase.risk')}</h5>
+              <p className="text-sm">{t('enterpriseShowcase.riskDesc')}</p>
+            </div>
+            <div className="data-cell">
+              <h5 className="font-mono text-xs text-wm-muted uppercase tracking-widest mb-2">{t('enterpriseShowcase.soc')}</h5>
+              <p className="text-sm">{t('enterpriseShowcase.socDesc')}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact form */}
+      <section className="py-24 px-6 border-t border-wm-border" id="contact">
+        <div className="max-w-xl mx-auto">
+          <h2 className="font-display text-3xl font-bold mb-2 text-center">{t('enterpriseShowcase.contactFormTitle')}</h2>
+          <p className="text-sm text-wm-muted mb-10 text-center">{t('enterpriseShowcase.contactFormSubtitle')}</p>
+          <form className="space-y-4" onSubmit={async (e) => {
+            e.preventDefault();
+            const form = e.currentTarget;
+            const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+            const origText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = t('enterpriseShowcase.contactSending');
+            const fd = new FormData(form);
+            const honeypot = (form.querySelector('input[name="website"]') as HTMLInputElement)?.value || '';
+            const turnstileWidget = form.querySelector('.cf-turnstile') as HTMLElement | null;
+            const turnstileToken = turnstileWidget?.dataset.token || '';
+            try {
+              const res = await fetch(`${API_BASE}/register-interest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: fd.get('email'),
+                  name: fd.get('name'),
+                  organization: fd.get('organization'),
+                  message: fd.get('message'),
+                  source: 'enterprise-contact',
+                  website: honeypot,
+                  turnstileToken,
+                }),
+              });
+              if (!res.ok) throw new Error();
+              btn.textContent = t('enterpriseShowcase.contactSent');
+              btn.className = btn.className.replace('bg-wm-green', 'bg-wm-card border border-wm-green text-wm-green');
+            } catch {
+              btn.textContent = t('enterpriseShowcase.contactFailed');
+              btn.disabled = false;
+              setTimeout(() => { btn.textContent = origText; }, 4000);
+            }
+          }}>
+            <input type="text" name="website" autoComplete="off" tabIndex={-1} aria-hidden="true" className="absolute opacity-0 h-0 w-0 pointer-events-none" />
+            <div className="grid grid-cols-2 gap-4">
+              <input type="text" name="name" placeholder={t('enterpriseShowcase.namePlaceholder')} required className="bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono" />
+              <input type="email" name="email" placeholder={t('enterpriseShowcase.emailPlaceholder')} required className="bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono" />
+            </div>
+            <input type="text" name="organization" placeholder={t('enterpriseShowcase.orgPlaceholder')} className="w-full bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono" />
+            <textarea name="message" placeholder={t('enterpriseShowcase.messagePlaceholder')} rows={4} className="w-full bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono resize-none" />
+            <div className="cf-turnstile mx-auto" data-size="invisible" />
+            <button type="submit" className="w-full bg-wm-green text-wm-bg py-3 rounded-sm font-mono text-sm uppercase tracking-wider font-bold hover:bg-green-400 transition-colors">
+              {t('enterpriseShowcase.submitContact')}
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    {/* Footer */}
+    <footer className="border-t border-wm-border bg-[#020202] py-8 px-6 text-center">
+      <div className="flex flex-col md:flex-row items-center justify-between max-w-7xl mx-auto text-xs text-wm-muted font-mono">
+        <div className="flex items-center gap-4 mb-4 md:mb-0">
+          <Logo />
+        </div>
+        <div className="flex gap-6">
+          <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ''; }} className="hover:text-wm-text transition-colors">{t('nav.pro')}</a>
+          <a href="https://x.com/eliehabib" target="_blank" rel="noreferrer" className="hover:text-wm-text transition-colors">X</a>
+          <a href="https://github.com/koala73/worldmonitor" target="_blank" rel="noreferrer" className="hover:text-wm-text transition-colors">GitHub</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+);
+
 /* ─── Page Layout ─── */
 export default function App() {
+  const [page, setPage] = useState(() => window.location.hash === '#enterprise' ? 'enterprise' : 'home');
+
+  useEffect(() => {
+    const onHash = () => {
+      const next = window.location.hash === '#enterprise' ? 'enterprise' : 'home';
+      setPage(next);
+      if (next === 'enterprise') window.scrollTo(0, 0);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  if (page === 'enterprise') return <EnterprisePage />;
+
   return (
     <div className="min-h-screen selection:bg-wm-green/30 selection:text-wm-green">
       <Navbar />
       <main>
-        {/* 1. Hero */}
         <Hero />
-        {/* 2. Social proof */}
         <SocialProof />
-        {/* 3. Two-path split */}
         <TwoPathSplit />
-        {/* 4. Audience personas */}
         <AudiencePersonas />
-        {/* 5. Why upgrade */}
         <WhyUpgrade />
-        {/* 5. Live dashboard embed */}
         <LivePreview />
-        {/* 6. Source marquee */}
         <SourceMarquee />
-        {/* 7. Pro showcase + Slack mock */}
         <ProShowcase />
-        {/* 9. API section */}
         <ApiSection />
-        {/* 10. Enterprise section */}
         <EnterpriseShowcase />
-        {/* 11. Comparison table */}
         <PricingTable />
-        {/* 12. FAQ */}
         <FAQ />
       </main>
-      {/* 13. Final CTA + footer */}
       <Footer />
     </div>
   );
