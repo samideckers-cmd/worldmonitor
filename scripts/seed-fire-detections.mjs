@@ -117,6 +117,7 @@ async function main() {
   await runSeed('wildfire', 'fires', CANONICAL_KEY, () => fetchAllRegions(apiKey), {
     validateFn: (data) => Array.isArray(data?.fireDetections) && data.fireDetections.length > 0,
     ttlSeconds: 7200,
+    lockTtlMs: 300_000, // 5 min — 27 FIRMS calls × 6s pacing = 162s floor
     sourceVersion: FIRMS_SOURCES.join('+'),
   });
 }

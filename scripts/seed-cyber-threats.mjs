@@ -450,9 +450,11 @@ async function fetchAbuseIpDb() {
       console.log('  AbuseIPDB: skipped (rate limit, no cache)');
       return { ok: false, threats: [] };
     }
-  } catch {
-    console.warn('  AbuseIPDB: rate-limit check failed (Redis), skipping to avoid quota burn');
-    return { ok: false, threats: [] };
+  } catch (e) {
+    console.warn('  AbuseIPDB: rate-limit check failed (Redis) — proceeding with caution:', e?.message || e);
+    // Proceed to API call: a transient Redis blip should not permanently disable
+    // the source. The 2h rate-limit interval + 10-min cron means at most 1 extra
+    // call per Redis outage window, well within the 100/day free-plan budget.
   }
 
   try {
