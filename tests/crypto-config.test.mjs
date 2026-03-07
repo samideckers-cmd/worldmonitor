@@ -27,15 +27,18 @@ describe('shared/crypto.json integrity', () => {
   });
 
   it('coinpaprika ids exist on CoinPaprika API', async () => {
-    const resp = await fetch('https://api.coinpaprika.com/v1/coins', {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!resp.ok) {
-      console.log(`  skipping: CoinPaprika API returned ${resp.status}`);
+    let coins;
+    try {
+      const resp = await fetch('https://api.coinpaprika.com/v1/coins', {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!resp.ok) { console.log(`  skipping: CoinPaprika API returned ${resp.status}`); return; }
+      coins = await resp.json();
+    } catch (err) {
+      console.log(`  skipping: CoinPaprika unreachable (${err.code || err.message})`);
       return;
     }
-    const coins = await resp.json();
     const validIds = new Set(coins.map((c) => c.id));
     const invalid = [];
     for (const [geckoId, paprikaId] of Object.entries(crypto.coinpaprika)) {
