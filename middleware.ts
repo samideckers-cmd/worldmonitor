@@ -111,6 +111,16 @@ export default function middleware(request: Request) {
     return;
   }
 
+  // Allow authenticated server-to-server requests with valid WM API key
+  const wmKey = request.headers.get('x-worldmonitor-key') ?? '';
+  if (wmKey) {
+    const validKeysRaw = (process.env.WORLDMONITOR_VALID_KEYS ?? '');
+    const validKeys = validKeysRaw.split(',').map((k: string) => k.trim()).filter(Boolean);
+    if (validKeys.includes(wmKey)) {
+      return; // valid API key — bypass all bot filtering
+    }
+  }
+
   // Block bots from all API routes
   if (BOT_UA.test(ua)) {
     return new Response('{"error":"Forbidden"}', {
