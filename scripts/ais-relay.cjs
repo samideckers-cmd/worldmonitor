@@ -103,10 +103,8 @@ const RELAY_OREF_RATE_LIMIT_MAX = Number.isFinite(Number(process.env.RELAY_OREF_
   ? Number(process.env.RELAY_OREF_RATE_LIMIT_MAX) : 600;
 
 if (IS_PRODUCTION_RELAY && !RELAY_SHARED_SECRET && !ALLOW_UNAUTHENTICATED_RELAY) {
-  console.error('[Relay] Error: RELAY_SHARED_SECRET is required in production');
-  console.error('[Relay] Set RELAY_SHARED_SECRET on Railway and Vercel to secure relay endpoints');
-  console.error('[Relay] To bypass temporarily (not recommended), set ALLOW_UNAUTHENTICATED_RELAY=true');
-  process.exit(1);
+  console.warn('[Relay] Warning: RELAY_SHARED_SECRET not set — relay running in unauthenticated mode');
+  console.warn('[Relay] Set RELAY_SHARED_SECRET for production security');
 }
 
 // ─────────────────────────────────────────────────────────────
