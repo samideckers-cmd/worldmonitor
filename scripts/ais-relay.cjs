@@ -6236,6 +6236,10 @@ const server = http.createServer(async (req, res) => {
 });
 
 function connectUpstream() {
+  // Disabled if no AIS key configured
+  if (!API_KEY) {
+    return;
+  }
   // Skip if already connected or connecting
   if (upstreamSocket?.readyState === WebSocket.OPEN ||
       upstreamSocket?.readyState === WebSocket.CONNECTING) return;
